@@ -117,7 +117,7 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
           <h1 className="font-display text-6xl md:text-8xl font-light text-foreground leading-none mb-6">
             Найди<br />
             <em className="text-primary not-italic">своего</em><br />
-            человека
+            инвестора
           </h1>
         </div>
 
