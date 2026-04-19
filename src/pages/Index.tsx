@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+import AuthScreen from "@/components/AuthScreen";
 
 type Page = "home" | "swipe" | "matches" | "profile" | "chat";
 
@@ -587,7 +588,7 @@ function ChatPage({ matchId, setPage }: { matchId: number; setPage: (p: Page) =>
   );
 }
 
-function ProfilePage() {
+function ProfilePage({ userName, onLogout }: { userName?: string; onLogout?: () => void }) {
   const [activeTab, setActiveTab] = useState<"info" | "reviews">("info");
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
@@ -711,13 +712,24 @@ function ProfilePage() {
       <div className="px-4 -mt-6 relative">
         <div className="flex items-end justify-between mb-4">
           <div />
-          <button className="bg-white border border-border text-foreground font-body text-sm font-medium px-4 py-2 rounded-full hover:bg-secondary transition-colors flex items-center gap-2">
-            <Icon name="Edit2" size={14} />
-            Изменить
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="bg-white border border-border text-foreground font-body text-sm font-medium px-4 py-2 rounded-full hover:bg-secondary transition-colors flex items-center gap-2">
+              <Icon name="Edit2" size={14} />
+              Изменить
+            </button>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                className="w-9 h-9 bg-white border border-border text-muted-foreground rounded-full flex items-center justify-center hover:text-destructive hover:border-destructive/30 transition-colors"
+                title="Выйти"
+              >
+                <Icon name="LogOut" size={15} />
+              </button>
+            )}
+          </div>
         </div>
 
-        <h2 className="font-display text-3xl font-medium text-foreground">Алексей, 30</h2>
+        <h2 className="font-display text-3xl font-medium text-foreground">{userName || "Алексей"}, 30</h2>
         <p className="font-body text-muted-foreground text-sm flex items-center gap-1 mt-0.5 mb-3">
           <Icon name="MapPin" size={12} />
           Москва · Разработчик
@@ -839,6 +851,20 @@ function ProfilePage() {
 export default function Index() {
   const [page, setPage] = useState<Page>("home");
   const [chatId, setChatId] = useState<number>(1);
+  const [user, setUser] = useState<{ id: number; name: string; token: string } | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    const name = localStorage.getItem("auth_name");
+    const id = localStorage.getItem("auth_id");
+    if (token && name && id) {
+      setUser({ token, name, id: Number(id) });
+    }
+  }, []);
+
+  if (!user) {
+    return <AuthScreen onAuth={(u) => setUser(u)} />;
+  }
 
   const navItems: { id: Page; icon: string; label: string }[] = [
     { id: "home", icon: "Compass", label: "Главная" },
@@ -854,7 +880,15 @@ export default function Index() {
         {page === "swipe" && <SwipePage />}
         {page === "matches" && <MatchesPage setPage={setPage} setChatId={setChatId} />}
         {page === "chat" && <ChatPage matchId={chatId} setPage={setPage} />}
-        {page === "profile" && <ProfilePage />}
+        {page === "profile" && (
+          <ProfilePage
+            userName={user.name}
+            onLogout={() => {
+              localStorage.clear();
+              setUser(null);
+            }}
+          />
+        )}
       </div>
 
       {page !== "chat" && (
