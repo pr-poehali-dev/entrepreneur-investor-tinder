@@ -592,6 +592,12 @@ function ProfilePage() {
   const [newReview, setNewReview] = useState("");
   const [newRating, setNewRating] = useState(5);
   const [reviews, setReviews] = useState(REVIEWS);
+  const [userVideo, setUserVideo] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileVideoRef = useRef<HTMLVideoElement>(null);
 
   const addReview = () => {
     if (!newReview.trim()) return;
@@ -601,21 +607,105 @@ function ProfilePage() {
 
   const avgRating = (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = URL.createObjectURL(file);
+    setTimeout(() => {
+      setUserVideo(url);
+      setUploading(false);
+      setIsPlaying(false);
+      setProgress(0);
+    }, 800);
+  };
+
+  const toggleVideo = () => {
+    if (!profileVideoRef.current) return;
+    if (isPlaying) {
+      profileVideoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      profileVideoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-80px)] pb-6">
       {/* Video header */}
-      <div className="relative h-72 overflow-hidden">
-        <VideoCard
-          profile={PROFILES[1]}
-          height="100%"
-          autoPlay={false}
-          className="rounded-none"
+      <div className="relative h-72 overflow-hidden bg-black">
+        {userVideo ? (
+          <>
+            <video
+              ref={profileVideoRef}
+              src={userVideo}
+              className="w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+              onTimeUpdate={() => {
+                if (profileVideoRef.current) {
+                  setProgress((profileVideoRef.current.currentTime / profileVideoRef.current.duration) * 100);
+                }
+              }}
+            />
+            {/* Progress */}
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/20">
+              <div className="h-full bg-white/80 transition-all duration-300" style={{ width: `${progress}%` }} />
+            </div>
+            {/* Play/pause */}
+            <button onClick={toggleVideo} className="absolute inset-0 flex items-center justify-center group">
+              <div className={`w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all duration-200 ${isPlaying ? "opacity-0 group-hover:opacity-100" : "opacity-100"}`}>
+                <Icon name={isPlaying ? "Pause" : "Play"} size={22} className="text-white ml-0.5" />
+              </div>
+            </button>
+            {/* Replace button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white font-body text-sm font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/60 transition-colors"
+            >
+              <Icon name="RefreshCw" size={14} />
+              Заменить
+            </button>
+          </>
+        ) : (
+          <div
+            className="w-full h-full flex flex-col items-center justify-center cursor-pointer group relative"
+            style={{ background: "linear-gradient(135deg, hsl(var(--primary)/0.3), hsl(350,65%,58%,0.2))" }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <img
+              src={PROFILES[1].image}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-30"
+            />
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              {uploading ? (
+                <>
+                  <div className="w-14 h-14 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                  <p className="font-body text-white text-sm">Загружаем видео...</p>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:bg-white/30 transition-colors border border-white/30">
+                    <Icon name="Video" size={28} className="text-white" />
+                  </div>
+                  <p className="font-body text-white font-medium">Добавить видео-визитку</p>
+                  <p className="font-body text-white/70 text-xs text-center max-w-[200px]">MP4, MOV до 100 МБ · до 60 секунд</p>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="video/*"
+          className="hidden"
+          onChange={handleFileChange}
         />
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
-        <button className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white font-body text-sm font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/60 transition-colors">
-          <Icon name="Video" size={14} />
-          Загрузить видео
-        </button>
       </div>
 
       <div className="px-4 -mt-6 relative">
