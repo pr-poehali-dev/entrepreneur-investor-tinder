@@ -15,6 +15,8 @@ const PROFILES = [
     reviews: 12,
     tags: ["Искусство", "Путешествия", "Кулинария"],
     image: "https://cdn.poehali.dev/projects/83b5007a-dc9f-4a02-95e1-946d2d2ed063/files/ae938182-5e9b-4909-888f-1ef53495d44d.jpg",
+    video: "https://cdn.poehali.dev/projects/83b5007a-dc9f-4a02-95e1-946d2d2ed063/files/ae938182-5e9b-4909-888f-1ef53495d44d.jpg",
+    videoColor: "from-rose-900 to-pink-700",
   },
   {
     id: 2,
@@ -27,6 +29,8 @@ const PROFILES = [
     reviews: 8,
     tags: ["Архитектура", "Джаз", "Бег"],
     image: "https://cdn.poehali.dev/projects/83b5007a-dc9f-4a02-95e1-946d2d2ed063/files/125bb6d7-b805-4657-be57-12b7f85e258e.jpg",
+    video: null,
+    videoColor: "from-slate-800 to-blue-900",
   },
   {
     id: 3,
@@ -39,6 +43,8 @@ const PROFILES = [
     reviews: 21,
     tags: ["Фотография", "Кино", "Книги"],
     image: "https://cdn.poehali.dev/projects/83b5007a-dc9f-4a02-95e1-946d2d2ed063/files/424b3379-1e70-4469-8b93-3fa860ea6411.jpg",
+    video: null,
+    videoColor: "from-amber-800 to-orange-600",
   },
   {
     id: 4,
@@ -51,8 +57,96 @@ const PROFILES = [
     reviews: 15,
     tags: ["Бизнес", "Спорт", "Гастрономия"],
     image: "https://cdn.poehali.dev/projects/83b5007a-dc9f-4a02-95e1-946d2d2ed063/files/616e5fb6-e33e-4383-b57f-0678d5f2a86f.jpg",
+    video: null,
+    videoColor: "from-emerald-900 to-teal-700",
   },
 ];
+
+function VideoCard({
+  profile,
+  className = "",
+  height = "62%",
+  autoPlay = false,
+}: {
+  profile: (typeof PROFILES)[0];
+  className?: string;
+  height?: string;
+  autoPlay?: boolean;
+}) {
+  const [playing, setPlaying] = useState(autoPlay);
+  const [progress, setProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    if (playing) {
+      videoRef.current.pause();
+      setPlaying(false);
+    } else {
+      videoRef.current.play();
+      setPlaying(true);
+    }
+  };
+
+  return (
+    <div className={`relative overflow-hidden bg-black ${className}`} style={{ height }}>
+      {profile.video ? (
+        <video
+          ref={videoRef}
+          src={profile.video}
+          className="w-full h-full object-cover"
+          loop
+          muted
+          playsInline
+          onTimeUpdate={() => {
+            if (videoRef.current) {
+              setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100);
+            }
+          }}
+        />
+      ) : (
+        <div className={`w-full h-full bg-gradient-to-b ${profile.videoColor} flex items-center justify-center relative`}>
+          <img
+            src={profile.image}
+            alt={profile.name}
+            className="w-full h-full object-cover opacity-60"
+            draggable={false}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        </div>
+      )}
+
+      {/* Progress bar */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-white/20">
+        <div
+          className="h-full bg-white/80 transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* Play/pause overlay */}
+      <button
+        onClick={toggle}
+        className="absolute inset-0 flex items-center justify-center group"
+      >
+        <div
+          className={`w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center transition-all duration-200 ${
+            playing ? "opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100" : "opacity-100"
+          }`}
+        >
+          <Icon name={playing ? "Pause" : "Play"} size={22} className="text-white ml-0.5" />
+        </div>
+      </button>
+
+      {/* Video badge */}
+      <div className="absolute top-3 right-3 flex items-center gap-1 bg-black/40 backdrop-blur-sm rounded-full px-2 py-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+        <span className="font-body text-white text-xs">видео</span>
+      </div>
+    </div>
+  );
+}
 
 const MATCHES = [
   {
@@ -169,8 +263,8 @@ function HomePage({ setPage }: { setPage: (p: Page) => void }) {
                 zIndex: 3 - i,
               }}
             >
-              <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+              <VideoCard profile={p} height="100%" />
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 pointer-events-none">
                 <div className="text-white text-xs font-body font-medium">{p.name}, {p.age}</div>
               </div>
             </div>
@@ -254,7 +348,7 @@ function SwipePage() {
           className="absolute inset-0 bg-white rounded-3xl shadow-lg overflow-hidden border border-border/30"
           style={{ transform: "scale(0.94) translateY(20px)", zIndex: 0 }}
         >
-          <img src={next.image} alt="" className="w-full h-full object-cover" />
+          <img src={next.image} alt="" className="w-full h-full object-cover opacity-60" />
         </div>
 
         <div
@@ -273,7 +367,7 @@ function SwipePage() {
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         >
-          <img src={current.image} alt={current.name} className="w-full h-[62%] object-cover" draggable={false} />
+          <VideoCard profile={current} height="62%" autoPlay={true} />
 
           <div
             className="absolute top-6 left-6 border-4 border-green-400 text-green-400 font-display text-2xl font-bold px-3 py-1 rounded-xl"
@@ -383,7 +477,14 @@ function MatchesPage({
             className="w-full bg-white rounded-2xl p-4 flex items-center gap-4 hover:shadow-md transition-all duration-200 border border-border/50 text-left"
           >
             <div className="relative flex-shrink-0">
-              <img src={match.image} alt={match.name} className="w-14 h-14 rounded-full object-cover" />
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-black relative">
+                <img src={match.image} alt={match.name} className="w-full h-full object-cover opacity-80" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-black/40 flex items-center justify-center">
+                    <Icon name="Play" size={10} className="text-white ml-0.5" />
+                  </div>
+                </div>
+              </div>
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-400 rounded-full border-2 border-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -502,29 +603,24 @@ function ProfilePage() {
 
   return (
     <div className="min-h-[calc(100vh-80px)] pb-6">
-      <div className="relative h-44 bg-gradient-to-br from-primary/20 to-red-100 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-40"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 30% 50%, hsl(var(--primary)) 0%, transparent 60%), radial-gradient(circle at 70% 50%, hsl(350, 65%, 70%) 0%, transparent 60%)",
-          }}
+      {/* Video header */}
+      <div className="relative h-72 overflow-hidden">
+        <VideoCard
+          profile={PROFILES[1]}
+          height="100%"
+          autoPlay={false}
+          className="rounded-none"
         />
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+        <button className="absolute top-4 right-4 bg-black/40 backdrop-blur-sm text-white font-body text-sm font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/60 transition-colors">
+          <Icon name="Video" size={14} />
+          Загрузить видео
+        </button>
       </div>
 
-      <div className="px-4 -mt-12 relative">
+      <div className="px-4 -mt-6 relative">
         <div className="flex items-end justify-between mb-4">
-          <div className="relative">
-            <img
-              src="https://cdn.poehali.dev/projects/83b5007a-dc9f-4a02-95e1-946d2d2ed063/files/125bb6d7-b805-4657-be57-12b7f85e258e.jpg"
-              alt="Профиль"
-              className="w-24 h-24 rounded-2xl object-cover border-4 border-background shadow-lg"
-            />
-            <button className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors">
-              <Icon name="Camera" size={14} />
-            </button>
-          </div>
+          <div />
           <button className="bg-white border border-border text-foreground font-body text-sm font-medium px-4 py-2 rounded-full hover:bg-secondary transition-colors flex items-center gap-2">
             <Icon name="Edit2" size={14} />
             Изменить
